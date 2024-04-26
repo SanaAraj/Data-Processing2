@@ -2,28 +2,13 @@
 const express = require('express');
 const multer = require('multer');
 const exceljs = require('exceljs');
-const mysql = require('mysql');
-
 const app = express();
 const port = 3000;
 
 // Configure Multer for file uploads
 const upload = multer({ dest: 'uploads/' });
 
-// Create MySQL connection
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '2011331055',
-    database: 'request_management_system'
-});
-
-// Connect to MySQL
-db.connect((err) => {
-    if (err) throw err;
-    console.log('Connected to MySQL database');
-});
-
+const sqlite3 = require('sqlite3').verbose(); // Import SQLite module
 
 // API endpoint for uploading Excel file
 app.post('/upload', upload.single('file'), (req, res) => {
@@ -42,6 +27,8 @@ app.post('/upload', upload.single('file'), (req, res) => {
 
     // Start time
     const startTime = new Date();
+	
+	const db = new sqlite3.Database(':memory:'); // Use in-memory database for this example
 
     // Read Excel file
     const workbook = new exceljs.Workbook();
@@ -162,6 +149,15 @@ app.post('/upload', upload.single('file'), (req, res) => {
         .catch((err) => {
             console.log('Error:', err);
             res.status(500).send('Error processing file.');
+        })
+		.finally(() => {
+            // Close SQLite database connection
+            db.close((err) => {
+                if (err) {
+                    console.error(err.message);
+                }
+                console.log('Closed the database connection.');
+            });
         });
 });
 
@@ -170,3 +166,4 @@ app.post('/upload', upload.single('file'), (req, res) => {
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
+
